@@ -59,25 +59,8 @@ app.use((req, res, next) => {
     throw err;
   });
 
-  // importantly only setup vite in development and after
-  // setting up all the other routes so the catch-all route
-  // doesn't interfere with the other routes
-  if (app.get("env") === "development") {
-    await setupVite(app, server);
-  } else {
-    serveStatic(app);
-  }
+  // 🔍 Debug tip: log the current environment
+  console.log("ENV:", app.get("env"));
 
-  // Use process.env.PORT if available (for Render), else 5000
-  const port = process.env.PORT ? parseInt(process.env.PORT) : 5000;
-  server.listen(
-    {
-      port,
-      host: "0.0.0.0",
-      reusePort: true,
-    },
-    () => {
-      log(`serving on port ${port}`);
-    }
-  );
-})();
+  // importantly only setup vite in development and after
+  //
