@@ -2,6 +2,7 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { setupAuth, isAuthenticated } from "./localAuth";
+import authRoutes from "./authRoutes"; // Import your auth routes
 import { 
   insertProfitScenarioSchema,
   insertRetailBudgetSchema,
@@ -15,6 +16,9 @@ import * as XLSX from 'xlsx';
 export async function registerRoutes(app: Express): Promise<Server> {
   // Auth middleware
   await setupAuth(app);
+
+  // Register auth routes
+  app.use(authRoutes);
 
   // Auth routes
   app.get('/api/auth/user', isAuthenticated, async (req: any, res) => {

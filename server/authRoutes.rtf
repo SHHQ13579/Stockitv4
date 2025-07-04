@@ -12,6 +12,7 @@ import \{ storage \} from "./storage";\
 import \{ db \} from "./db";\
 import \{ users \} from "@shared/schema";\
 import SibApiV3Sdk from 'sib-api-v3-sdk';\
+import passport from "passport";\
 \
 // Setup Brevo (Sendinblue)\
 const brevoClient = SibApiV3Sdk.ApiClient.instance;\
@@ -21,6 +22,34 @@ apiKey.apiKey = process.env.BREVO_API_KEY; // <-- THIS LINE IS REQUIRED\
 const sendTransacEmail = new SibApiV3Sdk.TransactionalEmailsApi();\
 \
 const router = Router();\
+\
+// Login endpoint\
+router.post("/api/login", (req, res, next) => \{\
+  passport.authenticate("local", (err: any, user: any, info: any) => \{\
+    if (err) \{\
+      return res.status(500).json(\{ error: "Login failed" \});\
+    \}\
+    if (!user) \{\
+      return res.status(401).json(\{ error: "Invalid credentials" \});\
+    \}\
+    req.logIn(user, (err: any) => \{\
+      if (err) \{\
+        return res.status(500).json(\{ error: "Login failed" \});\
+      \}\
+      return res.json(\{ success: true, user: \{ id: user.id, email: user.email \} \});\
+    \});\
+  \})(req, res, next);\
+\});\
+\
+// Logout endpoint\
+router.post("/api/logout", (req, res) => \{\
+  req.logout((err) => \{\
+    if (err) \{\
+      return res.status(500).json(\{ error: "Logout failed" \});\
+    \}\
+    res.json(\{ success: true \});\
+  \});\
+\});\
 \
 // Registration endpoint\
 router.post("/api/register", async (req, res) => \{\
