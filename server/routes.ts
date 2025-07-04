@@ -1,7 +1,7 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { setupAuth, isAuthenticated } from "./replitAuth";
+import { setupAuth, isAuthenticated } from "./localAuth";
 import { 
   insertProfitScenarioSchema,
   insertRetailBudgetSchema,
@@ -19,7 +19,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Auth routes
   app.get('/api/auth/user', isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.user.id;
       const user = await storage.getUser(userId);
       res.json(user);
     } catch (error) {
@@ -30,7 +30,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.patch('/api/auth/user/vat', isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.user.id;
       const { vatPercent } = req.body;
       await storage.updateUserVatPercent(userId, vatPercent);
       res.json({ success: true });
@@ -42,7 +42,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.patch('/api/auth/user/professional-budget-percent', isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.user.id;
       const { budgetPercent } = req.body;
       await storage.updateUserProfessionalBudgetPercent(userId, budgetPercent);
       res.json({ success: true });
@@ -55,7 +55,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Profit scenarios
   app.get("/api/profit-scenarios", isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.user.id;
       const scenarios = await storage.getProfitScenarios(userId);
       res.json(scenarios);
     } catch (error) {
@@ -65,7 +65,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/profit-scenarios", isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.user.id;
       const scenario = insertProfitScenarioSchema.parse(req.body);
       const newScenario = await storage.createProfitScenario(userId, scenario);
       res.json(newScenario);
@@ -76,7 +76,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.delete("/api/profit-scenarios/:id", isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.user.id;
       const id = parseInt(req.params.id);
       await storage.deleteProfitScenario(id, userId);
       res.json({ success: true });
@@ -88,7 +88,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Retail budget
   app.get("/api/retail-budget", isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.user.id;
       const budget = await storage.getLatestRetailBudget(userId);
       res.json(budget);
     } catch (error) {
@@ -98,7 +98,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/retail-budget", isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.user.id;
       const { budget, suppliers } = req.body;
       const budgetData = insertRetailBudgetSchema.parse(budget);
       const supplierData = z.array(insertRetailSupplierSchema.omit({ budgetId: true })).parse(suppliers);
@@ -113,7 +113,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Professional budget
   app.get("/api/professional-budget", isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.user.id;
       const budget = await storage.getLatestProfessionalBudget(userId);
       res.json(budget);
     } catch (error) {
@@ -123,7 +123,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/professional-budget", isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.user.id;
       const { budget, suppliers } = req.body;
       const budgetData = insertProfessionalBudgetSchema.parse(budget);
       const supplierData = z.array(insertProfessionalSupplierSchema.omit({ budgetId: true })).parse(suppliers);
@@ -138,7 +138,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Excel export endpoints
   app.post("/api/export/profit-scenarios", isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.user.id;
       const scenarios = await storage.getProfitScenarios(userId);
       const workbook = XLSX.utils.book_new();
       
@@ -172,7 +172,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/export/retail-budget", isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.user.id;
       const budget = await storage.getLatestRetailBudget(userId);
       if (!budget) {
         return res.status(404).json({ error: "No retail budget found" });
@@ -212,7 +212,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/export/professional-budget", isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.user.id;
       const budget = await storage.getLatestProfessionalBudget(userId);
       if (!budget) {
         return res.status(404).json({ error: "No professional budget found" });
